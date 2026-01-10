@@ -379,6 +379,28 @@ mod tests {
     }
 
     #[test]
+    fn if_test11() {
+        let args = sargs(1);
+        let input = "char a; void main() { if (a < X) X = 0; }";
+        let mut output = Vec::new();
+        compile(input.as_bytes(), &mut output, &args, simple_build).unwrap();
+        let result = str::from_utf8(&output).unwrap();
+        print!("{:?}", result);
+        assert!(result.contains("CPX a\n\tBCC .ifend1\n\tBEQ .ifend1\n\tLDX #0"));
+    }
+
+    #[test]
+    fn if_test12() {
+        let args = sargs(1);
+        let input = "char a; void main() { if (a >= Y) X = 0; }";
+        let mut output = Vec::new();
+        compile(input.as_bytes(), &mut output, &args, simple_build).unwrap();
+        let result = str::from_utf8(&output).unwrap();
+        print!("{:?}", result);
+        assert!(result.contains("CPY a\n\tBEQ .ifhere2\n\tBCS .ifend1\n.ifhere2\n\tLDX #0"));
+    }
+
+    #[test]
     fn not_test() {
         let args = sargs(1);
         let input = "void main() { X = 0; Y = !X; }";
