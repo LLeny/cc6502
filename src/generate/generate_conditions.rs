@@ -628,7 +628,7 @@ impl<'a, 'b> GeneratorState<'a> {
                         return self.generate_condition_ex(
                             &ExprType::A(false),
                             op,
-                            r,
+                            right,
                             pos,
                             negate,
                             label,
@@ -681,7 +681,7 @@ impl<'a, 'b> GeneratorState<'a> {
                         return self.generate_condition_ex(
                             &ExprType::A(false),
                             op,
-                            r,
+                            right,
                             pos,
                             negate,
                             label,
