@@ -281,7 +281,43 @@ impl<'a, 'b> GeneratorState<'a> {
                 f = self.generate_assign(&ExprType::A(true), l, pos, true)?;
                 false
             } else {
-                true
+                if *op == Operation::Eq {
+                    let ifstart_label = format!(".ifstart{}", self.local_label_counter_if);
+                    self.local_label_counter_if += 1;
+                    let l1 = self.generate_assign(&ExprType::A(true), l, pos, false)?;
+                    self.generate_condition_ex(
+                        &l1,
+                        op,
+                        &ExprType::Immediate(v & 0xff),
+                        pos,
+                        true,
+                        &ifstart_label,
+                    )?;
+                    let l2 = self.generate_assign(&ExprType::A(true), l, pos, true)?;
+                    self.generate_condition_ex(
+                        &l2,
+                        op,
+                        &ExprType::Immediate(v >> 8),
+                        pos,
+                        false,
+                        label,
+                    )?;
+                    self.label(&ifstart_label)?;
+                    false
+                } else if *op == Operation::Neq {
+                    let l1 = self.generate_assign(&ExprType::A(true), l, pos, false)?;
+                    self.generate_condition_ex(&l1, op, &ExprType::Immediate(v & 0xff), pos, false, label)?;
+                    let l2 = self.generate_assign(&ExprType::A(true), l, pos, true)?;
+                    self.generate_condition_ex(
+                        &l2,
+                        op,
+                        &ExprType::Immediate(v >> 8),
+                        pos,
+                        false,
+                        label,
+                    )?;
+                    false
+                } else{ true }
             }
         } else {
             true
