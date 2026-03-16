@@ -401,6 +401,17 @@ mod tests {
     }
 
     #[test]
+    fn if_test13() {
+        let args = sargs(1);
+        let input = "char a[2]; void main() { if (a[X] >= Y) X = 0; }";
+        let mut output = Vec::new();
+        compile(input.as_bytes(), &mut output, &args, simple_build).unwrap();
+        let result = str::from_utf8(&output).unwrap();
+        print!("{:?}", result);
+        assert!(result.contains("TYA\n\tCMP a,X\n\tBCC .ifend1\n\tLDX #0\n.ifend1"));
+    }
+
+    #[test]
     fn not_test() {
         let args = sargs(1);
         let input = "void main() { X = 0; Y = !X; }";
@@ -1974,11 +1985,12 @@ void main() { fn2(); fn3(); }
         print!("{:?}", result);
         assert!(result.contains("LDA #>(ptr+-2560)\n\tSTA main_1_x"));
     }
-    
+
     #[test]
     fn pointers_array_test() {
         let args = sargs(1);
-        let input = "const char v[1] = {0}; const char *ptrs[2] = {v + 10, v - 10}; void main() { }";
+        let input =
+            "const char v[1] = {0}; const char *ptrs[2] = {v + 10, v - 10}; void main() { }";
         let mut output = Vec::new();
         compile(input.as_bytes(), &mut output, &args, simple_build).unwrap();
         let result = str::from_utf8(&output).unwrap();

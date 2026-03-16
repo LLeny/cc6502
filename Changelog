@@ -1,5 +1,6 @@
-v1.0.32 (11/29/2025) :
+v1.0.32 (02/09/2026) :
     - Added support for negative pointer offsets in static definitions
+		- FIXME: fixed bug with comparison between a[X] and Y. Added if_test13.
 
 v1.0.31 (11/05/2025) :
     - FIXME: fixed big bug with <= in for loop conditions
