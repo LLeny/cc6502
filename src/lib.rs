@@ -1232,7 +1232,7 @@ char i; void main() { i = one; }";
         compile(input.as_bytes(), &mut output, &args, simple_build).unwrap();
         let result = str::from_utf8(&output).unwrap();
         print!("{:?}", result);
-        assert!(result.contains("SEC\n\tLDA a\n\tSBC #16\n\tSTA cctmp\n\tLDA a+1\n\tSBC #39\n\tBNE .ifend1\n\tLDA cctmp\n\tBNE .ifend1\n\tLDX #1\n.ifend1"));
+        assert!(result.contains("LDA a\n\tCMP #16\n\tBNE .ifend1\n\tLDA a+1\n\tCMP #39\n\tBNE .ifend1\n\tLDX #1\n.ifend1"));
     }
 
     #[test]
@@ -1243,7 +1243,7 @@ char i; void main() { i = one; }";
         compile(input.as_bytes(), &mut output, &args, simple_build).unwrap();
         let result = str::from_utf8(&output).unwrap();
         print!("{:?}", result);
-        assert!(result.contains("SEC\n\tLDA a\n\tSBC #16\n\tSTA cctmp\n\tLDA a+1\n\tSBC #39\n\tBNE .ifstart1\n\tLDA cctmp\n\tBEQ .ifend1\n.ifstart1\n\tLDX #1\n.ifend1"));
+        assert!(result.contains("LDA a\n\tCMP #16\n\tBNE .ifstart1\n\tLDA a+1\n\tCMP #39\n\tBEQ .ifend1\n.ifstart1\n\tLDX #1\n.ifend1"));
     }
 
     #[test]
@@ -1254,7 +1254,7 @@ char i; void main() { i = one; }";
         compile(input.as_bytes(), &mut output, &args, simple_build).unwrap();
         let result = str::from_utf8(&output).unwrap();
         print!("{:?}", result);
-        assert!(result.contains("LDA a\n\tSTA cctmp\n\tLDA a+1\n\tBNE .ifend1\n\tLDA cctmp\n\tBNE .ifend1\n\tLDX #1\n.ifend1"));
+        assert!(result.contains("LDA a\n\tBNE .ifend1\n\tLDA a+1\n\tBNE .ifend1\n\tLDX #1\n.ifend1"));
     }
 
     #[test]
@@ -1265,7 +1265,7 @@ char i; void main() { i = one; }";
         compile(input.as_bytes(), &mut output, &args, simple_build).unwrap();
         let result = str::from_utf8(&output).unwrap();
         print!("{:?}", result);
-        assert!(result.contains("LDA a\n\tSTA cctmp\n\tLDA a+1\n\tBNE .ifstart1\n\tLDA cctmp\n\tBEQ .ifend1\n.ifstart1\n\tLDX #1\n.ifend1"));
+        assert!(result.contains("LDA a\n\tBNE .ifstart1\n\tLDA a+1\n\tBEQ .ifend1\n.ifstart1\n\tLDX #1\n.ifend1"));
     }
 
     #[test]
@@ -1287,7 +1287,7 @@ char i; void main() { i = one; }";
         compile(input.as_bytes(), &mut output, &args, simple_build).unwrap();
         let result = str::from_utf8(&output).unwrap();
         print!("{:?}", result);
-        assert!(result.contains("LDA a\n\tSTA cctmp\n\tLDA a+1\n\tBNE .ifstart1\n\tLDA cctmp\n\tBEQ .ifend1\n.ifstart1\n\tLDX #1\n.ifend1"));
+        assert!(result.contains("LDA a\n\tBNE .ifstart1\n\tLDA a+1\n\tBEQ .ifend1\n.ifstart1\n\tLDX #1\n.ifend1"));
     }
 
     #[test]
@@ -1298,7 +1298,7 @@ char i; void main() { i = one; }";
         compile(input.as_bytes(), &mut output, &args, simple_build).unwrap();
         let result = str::from_utf8(&output).unwrap();
         print!("{:?}", result);
-        assert!(result.contains("LDA a\n\tSTA cctmp\n\tLDA a+1\n\tBNE .ifend1\n\tLDA cctmp\n\tBNE .ifend1\n\tLDX #1\n.ifend1"));
+        assert!(result.contains("LDA a\n\tBNE .ifend1\n\tLDA a+1\n\tBNE .ifend1\n\tLDX #1\n.ifend1"));
     }
 
     #[test]
