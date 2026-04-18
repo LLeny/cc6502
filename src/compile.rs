@@ -49,6 +49,14 @@ pub enum VariableType {
     ShortPtr,
 }
 
+#[cfg(feature = "atarilynx")]
+#[derive(Debug, Copy, Clone, PartialEq)]
+pub enum VariableMemory {
+    Zeropage,
+    RAM,
+}
+
+#[cfg(not(feature = "atarilynx"))]
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub enum VariableMemory {
     ROM(u32),
@@ -184,7 +192,7 @@ pub(crate) enum Statement<'a> {
 
 #[derive(Debug, Clone)]
 pub struct StatementLoc<'a> {
-    pub(crate) pos: usize,
+    pub pos: usize,
     pub(crate) label: Option<String>,
     pub(crate) statement: Statement<'a>,
 }
@@ -390,7 +398,10 @@ impl<'a> CompilerState<'a> {
                 Variable {
                     order: self.variables.len(),
                     signed: false,
+                    #[cfg(not(feature = "atarilynx"))]
                     memory: VariableMemory::ROM(0),
+                    #[cfg(feature = "atarilynx")]
+                    memory: VariableMemory::RAM,
                     var_const: true,
                     alignment: 1,
                     def: VariableDefinition::Array(v),
@@ -555,7 +566,10 @@ impl<'a> CompilerState<'a> {
                 Variable {
                     order: self.variables.len(),
                     signed: false,
+                    #[cfg(not(feature = "atarilynx"))]
                     memory: VariableMemory::ROM(0),
+                    #[cfg(feature = "atarilynx")]
+                    memory: VariableMemory::RAM,
                     var_const: true,
                     alignment: 1,
                     def: VariableDefinition::Array(v),
@@ -1116,7 +1130,10 @@ impl<'a> CompilerState<'a> {
         let mut var_const_ex = !global;
         let mut signedness_specified = false;
         let mut signed = self.signed_chars;
+        #[cfg(not(feature = "atarilynx"))]
         let mut memory = VariableMemory::Zeropage;
+        #[cfg(feature = "atarilynx")]
+        let mut memory = VariableMemory::RAM;
         let mut alignment = 1;
         let mut reversed = false;
         let mut scattered = None;
@@ -1131,6 +1148,7 @@ impl<'a> CompilerState<'a> {
                     for p in pair.into_inner() {
                         //debug!("{:?}", p);
                         let start = p.as_span().start();
+                        #[cfg(not(feature = "atarilynx"))]
                         match p.as_rule() {
                             Rule::var_const => {
                                 var_const_ex = true;
@@ -1220,6 +1238,10 @@ impl<'a> CompilerState<'a> {
                             }
                             _ => unreachable!(),
                         }
+                        #[cfg(feature = "atarilynx")]
+                        if p.as_rule() == Rule::zp {
+                            memory = VariableMemory::Zeropage;
+                        }
                     }
                 }
                 Rule::global_id => {
@@ -1290,16 +1312,21 @@ impl<'a> CompilerState<'a> {
                                 start = px.as_span().start();
                                 match px.as_rule() {
                                     Rule::calc_expr => {
-                                        if !set_const {
-                                            return Err(self.syntax_error("Non constant global variable can't be statically initialized", start));
-                                        }
-                                        let vx = self.parse_calc(px.into_inner())?;
-                                        def = VariableDefinition::Value(VariableValue::Int(vx));
-                                        if var_type == VariableType::CharPtr && vx > 0xff {
-                                            memory = VariableMemory::Ramchip;
+                                        #[cfg(not(feature = "atarilynx"))]
+                                        {
+                                             if !set_const {
+                                                return Err(self.syntax_error("Non constant global variable can't be statically initialized", start));
+                                            }
+                                            let vx = self.parse_calc(px.into_inner())?;
+                                            def = VariableDefinition::Value(VariableValue::Int(vx));
+                                        
+                                            if var_type == VariableType::CharPtr && vx > 0xff {
+                                                memory = VariableMemory::Ramchip;
+                                            }
                                         }
                                     }
                                     Rule::var_ptr => {
+                                        #[cfg(not(feature = "atarilynx"))]
                                         if !set_const {
                                             return Err(self.syntax_error("Non constant global variable can't be statically initialized", start));
                                         }
@@ -1338,7 +1365,11 @@ impl<'a> CompilerState<'a> {
                                                         }
                                                     }
                                                     Rule::ptr_offset => {
-                                                        let sign = if x.as_str().starts_with("-") { -1 } else { 1 };
+                                                        let sign = if x.as_str().starts_with("-") {
+                                                            -1
+                                                        } else {
+                                                            1
+                                                        };
                                                         let offset = parse_int(
                                                             x.into_inner()
                                                                 .next()
@@ -1385,23 +1416,27 @@ impl<'a> CompilerState<'a> {
                                         });
                                     }
                                     Rule::array_def => {
-                                        if !set_const {
-                                            return Err(self.syntax_error("Non constant global variable can't be statically initialized", start));
-                                        }
-                                        memory = match memory {
-                                            VariableMemory::ROM(_)
-                                            | VariableMemory::Display
-                                            | VariableMemory::Frequency => memory,
-                                            _ => {
-                                                if let Some(bank) = self.function_bank {
-                                                    VariableMemory::ROM(bank)
-                                                } else if let Some(bank) = self.default_bank {
-                                                    VariableMemory::ROM(bank)
-                                                } else {
-                                                    VariableMemory::ROM(0)
-                                                }
+                                        #[cfg(not(feature = "atarilynx"))]
+                                        {
+                                            if !set_const {
+                                               return Err(self.syntax_error("Non constant global variable can't be statically initialized", start));
                                             }
-                                        };
+                                            memory = match memory {
+                                                VariableMemory::ROM(_)
+                                                | VariableMemory::Display
+                                                | VariableMemory::Frequency => memory,
+                                                _ => {
+                                                    if let Some(bank) = self.function_bank {
+                                                        VariableMemory::ROM(bank)
+                                                    } else if let Some(bank) = self.default_bank {
+                                                        VariableMemory::ROM(bank)
+                                                    } else {
+                                                        VariableMemory::ROM(0)
+                                                    }
+                                                }
+                                            };
+                                        }
+
                                         if var_type != VariableType::CharPtr
                                             && var_type != VariableType::CharPtrPtr
                                             && var_type != VariableType::ShortPtr
@@ -1501,7 +1536,7 @@ impl<'a> CompilerState<'a> {
                                                 match pxx.as_rule() {
                                                     Rule::calc_expr => v.push((
                                                         "__address__".into(),
-                                                        self.parse_calc(pxx.into_inner())?
+                                                        self.parse_calc(pxx.into_inner())?,
                                                     )),
                                                     Rule::var_ptr => {
                                                         let mut pxxx = pxx.into_inner();
@@ -1591,15 +1626,19 @@ impl<'a> CompilerState<'a> {
                                         }
                                     }
                                     Rule::quoted_string => {
-                                        if !set_const {
-                                            return Err(self.syntax_error("Non constant global variable can't be statically initialized", start));
+                                        #[cfg(not(feature = "atarilynx"))]
+                                        {
+                                            if !set_const {
+                                                return Err(self.syntax_error("Non constant global variable can't be statically initialized", start));
+                                            }
+                                            memory = match memory {
+                                                VariableMemory::ROM(_)
+                                                | VariableMemory::Display
+                                                | VariableMemory::Frequency => memory,
+                                                _ => VariableMemory::ROM(0),
+                                            };
                                         }
-                                        memory = match memory {
-                                            VariableMemory::ROM(_)
-                                            | VariableMemory::Display
-                                            | VariableMemory::Frequency => memory,
-                                            _ => VariableMemory::ROM(0),
-                                        };
+
                                         if var_type != VariableType::CharPtr {
                                             return Err(self.syntax_error(
                                                 "String provided for something not a char*",
@@ -1643,6 +1682,7 @@ impl<'a> CompilerState<'a> {
 
                     // If there is no definition, then it's not ROM, it's a variable in RAM on the cart
                     if def == VariableDefinition::None {
+                        #[cfg(not(feature = "atarilynx"))]
                         if let VariableMemory::ROM(bank) = memory {
                             memory = VariableMemory::MemoryOnChip(bank);
                         }
@@ -1717,7 +1757,10 @@ impl<'a> CompilerState<'a> {
                 let var_const_ex = false;
                 let mut signedness_specified = false;
                 let mut signed = self.signed_chars;
-                let memory = VariableMemory::Zeropage;
+                #[cfg(not(feature = "atarilynx"))]
+                let mut memory = VariableMemory::Zeropage;
+                #[cfg(feature = "atarilynx")]
+                let memory = VariableMemory::RAM;
                 let alignment = 1;
                 let reversed = false;
                 let scattered = None;
@@ -1992,7 +2035,10 @@ impl<'a> CompilerState<'a> {
                             Variable {
                                 order: self.variables.len(),
                                 signed: false,
+                                #[cfg(not(feature = "atarilynx"))]
                                 memory: VariableMemory::Dummy,
+                                #[cfg(feature = "atarilynx")]
+                                memory: VariableMemory::RAM,
                                 var_const: true,
                                 alignment: 1,
                                 def: VariableDefinition::None,
@@ -2049,7 +2095,10 @@ impl<'a> CompilerState<'a> {
                         let mut var_const = false;
                         let mut signedness_specified = false;
                         let mut signed = self.signed_chars;
-                        let memory = VariableMemory::Zeropage;
+                        #[cfg(not(feature = "atarilynx"))]
+                        let mut memory = VariableMemory::Zeropage;
+                        #[cfg(feature = "atarilynx")]
+                        let memory = VariableMemory::RAM;
                         let alignment = 1;
                         let reversed = false;
                         let scattered = None;
@@ -2381,6 +2430,8 @@ pub fn compile<I: BufRead, O: Write>(
     context.define("__ATARI2600__", "1");
     #[cfg(feature = "atari7800")]
     context.define("__ATARI7800__", "1");
+    #[cfg(feature = "atarilynx")]
+    context.define("__ATARILYNX__", "1");
     for i in &args.defines {
         let mut s = i.splitn(2, '=');
         let def = s.next().unwrap();

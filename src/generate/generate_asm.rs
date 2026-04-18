@@ -148,6 +148,8 @@ impl<'a> GeneratorState<'a> {
             ExprType::Absolute(variable, eight_bits, off) => {
                 let v = self.compiler_state.get_variable(variable);
                 signed = v.signed;
+
+                #[cfg(not(feature = "atarilynx"))]
                 let offset = if v.memory == VariableMemory::Superchip {
                     match mnemonic {
                         STA | STX | STY => *off,
@@ -170,6 +172,10 @@ impl<'a> GeneratorState<'a> {
                 } else {
                     *off
                 };
+
+                #[cfg(feature = "atarilynx")]
+                let offset = *off;
+
                 match v.var_type {
                     VariableType::Char => {
                         if !*eight_bits {
@@ -281,6 +287,8 @@ impl<'a> GeneratorState<'a> {
                 let mut indirect = false;
                 let v = self.compiler_state.get_variable(variable);
                 signed = v.signed;
+
+                #[cfg(not(feature = "atarilynx"))]
                 let offset = if v.memory == VariableMemory::Superchip {
                     match mnemonic {
                         STA | STX | STY => 0,
@@ -303,6 +311,10 @@ impl<'a> GeneratorState<'a> {
                 } else {
                     0
                 };
+
+                #[cfg(feature = "atarilynx")]
+                let offset = 0;
+
                 if v.var_type == VariableType::CharPtrPtr || v.var_type == VariableType::ShortPtr {
                     let off = offset + if high_byte { v.size } else { 0 };
                     if off > 0 {
@@ -424,6 +436,8 @@ impl<'a> GeneratorState<'a> {
             ExprType::AbsoluteX(variable) => {
                 let v = self.compiler_state.get_variable(variable);
                 signed = v.signed;
+
+                #[cfg(not(feature = "atarilynx"))]
                 let offset = if v.memory == VariableMemory::Superchip {
                     match mnemonic {
                         STA | STX | STY => 0,
@@ -446,6 +460,10 @@ impl<'a> GeneratorState<'a> {
                 } else {
                     0
                 };
+
+                #[cfg(feature = "atarilynx")]
+                let offset = 0;
+
                 if v.var_type == VariableType::CharPtr && !v.var_const && v.size == 1 {
                     return Err(self.compiler_state.syntax_error(
                         "Y-Indirect adressing mode not available with X register",
