@@ -53,7 +53,7 @@ pub enum VariableType {
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub enum VariableMemory {
     Zeropage,
-    RAM,
+    Bank(u32),
 }
 
 #[cfg(not(feature = "atarilynx"))]
@@ -401,7 +401,7 @@ impl<'a> CompilerState<'a> {
                     #[cfg(not(feature = "atarilynx"))]
                     memory: VariableMemory::ROM(0),
                     #[cfg(feature = "atarilynx")]
-                    memory: VariableMemory::RAM,
+                    memory: VariableMemory::Bank(0),
                     var_const: true,
                     alignment: 1,
                     def: VariableDefinition::Array(v),
@@ -569,7 +569,7 @@ impl<'a> CompilerState<'a> {
                     #[cfg(not(feature = "atarilynx"))]
                     memory: VariableMemory::ROM(0),
                     #[cfg(feature = "atarilynx")]
-                    memory: VariableMemory::RAM,
+                    memory: VariableMemory::Bank(0),
                     var_const: true,
                     alignment: 1,
                     def: VariableDefinition::Array(v),
@@ -1133,7 +1133,7 @@ impl<'a> CompilerState<'a> {
         #[cfg(not(feature = "atarilynx"))]
         let mut memory = VariableMemory::Zeropage;
         #[cfg(feature = "atarilynx")]
-        let mut memory = VariableMemory::RAM;
+        let mut memory = VariableMemory::Bank(0);
         let mut alignment = 1;
         let mut reversed = false;
         let mut scattered = None;
@@ -1239,8 +1239,21 @@ impl<'a> CompilerState<'a> {
                             _ => unreachable!(),
                         }
                         #[cfg(feature = "atarilynx")]
-                        if p.as_rule() == Rule::zp {
-                            memory = VariableMemory::Zeropage;
+                        match p.as_rule() {
+                            Rule::zp => {
+                                memory = VariableMemory::Zeropage;
+                            }
+                            Rule::bank => {
+                                memory = VariableMemory::Bank(
+                                    p.into_inner()
+                                        .next()
+                                        .unwrap()
+                                        .as_str()
+                                        .parse::<u32>()
+                                        .unwrap(),
+                                )
+                            }
+                            _ => (),
                         }
                     }
                 }
@@ -1314,12 +1327,12 @@ impl<'a> CompilerState<'a> {
                                     Rule::calc_expr => {
                                         #[cfg(not(feature = "atarilynx"))]
                                         {
-                                             if !set_const {
+                                            if !set_const {
                                                 return Err(self.syntax_error("Non constant global variable can't be statically initialized", start));
                                             }
                                             let vx = self.parse_calc(px.into_inner())?;
                                             def = VariableDefinition::Value(VariableValue::Int(vx));
-                                        
+
                                             if var_type == VariableType::CharPtr && vx > 0xff {
                                                 memory = VariableMemory::Ramchip;
                                             }
@@ -1419,7 +1432,7 @@ impl<'a> CompilerState<'a> {
                                         #[cfg(not(feature = "atarilynx"))]
                                         {
                                             if !set_const {
-                                               return Err(self.syntax_error("Non constant global variable can't be statically initialized", start));
+                                                return Err(self.syntax_error("Non constant global variable can't be statically initialized", start));
                                             }
                                             memory = match memory {
                                                 VariableMemory::ROM(_)
@@ -1760,7 +1773,7 @@ impl<'a> CompilerState<'a> {
                 #[cfg(not(feature = "atarilynx"))]
                 let mut memory = VariableMemory::Zeropage;
                 #[cfg(feature = "atarilynx")]
-                let memory = VariableMemory::RAM;
+                let memory = VariableMemory::Bank(0);
                 let alignment = 1;
                 let reversed = false;
                 let scattered = None;
@@ -2038,7 +2051,7 @@ impl<'a> CompilerState<'a> {
                                 #[cfg(not(feature = "atarilynx"))]
                                 memory: VariableMemory::Dummy,
                                 #[cfg(feature = "atarilynx")]
-                                memory: VariableMemory::RAM,
+                                memory: VariableMemory::Bank(0),
                                 var_const: true,
                                 alignment: 1,
                                 def: VariableDefinition::None,
@@ -2098,7 +2111,7 @@ impl<'a> CompilerState<'a> {
                         #[cfg(not(feature = "atarilynx"))]
                         let mut memory = VariableMemory::Zeropage;
                         #[cfg(feature = "atarilynx")]
-                        let memory = VariableMemory::RAM;
+                        let memory = VariableMemory::Bank(0);
                         let alignment = 1;
                         let reversed = false;
                         let scattered = None;
