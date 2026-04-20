@@ -228,6 +228,8 @@ pub struct CompilerState<'a> {
     variable_counter: u32,
     default_bank: Option<u32>,
     function_bank: Option<u32>,
+    #[cfg(feature = "atarilynx")]
+    pub bank_orgs: HashMap<u32, u16>,
 }
 
 impl<'a> CompilerState<'a> {
@@ -2278,6 +2280,19 @@ impl<'a> CompilerState<'a> {
                     self.included_assembler
                         .push((str.into(), filename, codesize, bank));
                 }
+                #[cfg(feature = "atarilynx")]
+                Rule::bank_org_decl => {
+                    let mut bank_number = 0;
+                    let mut bank_org = 0;
+                    for p in pair.into_inner() {
+                        match p.as_rule() {
+                            Rule::bank => bank_number = p.into_inner().next().unwrap().as_str().parse::<u32>().unwrap(),
+                            Rule::int => bank_org = parse_int(p.into_inner().next().unwrap()) as u16,
+                            _ => (),
+                        }
+                    }
+                    self.bank_orgs.insert(bank_number, bank_org);
+                }
                 _ => {
                     debug!("What's this ? {:?}", pair);
                     unreachable!()
@@ -2478,6 +2493,8 @@ pub fn compile<I: BufRead, O: Write>(
         variable_counter: 0,
         default_bank: None,
         function_bank: None,
+        #[cfg(feature = "atarilynx")]
+        bank_orgs: HashMap::new(),
     };
 
     let r = Cc2600Parser::parse(Rule::program, preprocessed_utf8);
