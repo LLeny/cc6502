@@ -247,9 +247,17 @@ impl<'a> GeneratorState<'a> {
                                         )?;
                                         self.asm(JSR, &ExprType::Label(var.clone()), pos, false)?;
                                     } else {
+                                        #[cfg(not(feature = "atarilynx"))]
                                         self.asm(
                                             JSR,
                                             &ExprType::Label(format!("Call{}", *var)),
+                                            pos,
+                                            false,
+                                        )?;
+                                        #[cfg(feature = "atarilynx")]
+                                        self.asm(
+                                            JSR,
+                                            &ExprType::Label(format!("{}", *var)),
                                             pos,
                                             false,
                                         )?;
