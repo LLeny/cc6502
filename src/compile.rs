@@ -1255,6 +1255,23 @@ impl<'a> CompilerState<'a> {
                                         .unwrap(),
                                 )
                             }
+                            Rule::var_const => {
+                                var_const_ex = true;
+                                set_const_ex = true;
+                            }
+                            Rule::var_sign => {
+                                signed = p.as_str().eq("signed");
+                                signedness_specified = true;
+                            }
+                            Rule::var_simple_type => {
+                                if p.as_str().starts_with("short") || p.as_str().starts_with("int")
+                                {
+                                    var_type_ex = VariableType::Short;
+                                    if !signedness_specified {
+                                        signed = true;
+                                    }
+                                }
+                            }
                             _ => (),
                         }
                     }
@@ -1327,14 +1344,15 @@ impl<'a> CompilerState<'a> {
                                 start = px.as_span().start();
                                 match px.as_rule() {
                                     Rule::calc_expr => {
-                                        #[cfg(not(feature = "atarilynx"))]
                                         {
+                                            #[cfg(not(feature = "atarilynx"))]
                                             if !set_const {
                                                 return Err(self.syntax_error("Non constant global variable can't be statically initialized", start));
                                             }
                                             let vx = self.parse_calc(px.into_inner())?;
                                             def = VariableDefinition::Value(VariableValue::Int(vx));
 
+                                            #[cfg(not(feature = "atarilynx"))]
                                             if var_type == VariableType::CharPtr && vx > 0xff {
                                                 memory = VariableMemory::Ramchip;
                                             }
@@ -2286,8 +2304,18 @@ impl<'a> CompilerState<'a> {
                     let mut bank_org = 0;
                     for p in pair.into_inner() {
                         match p.as_rule() {
-                            Rule::bank => bank_number = p.into_inner().next().unwrap().as_str().parse::<u32>().unwrap(),
-                            Rule::int => bank_org = parse_int(p.into_inner().next().unwrap()) as u16,
+                            Rule::bank => {
+                                bank_number = p
+                                    .into_inner()
+                                    .next()
+                                    .unwrap()
+                                    .as_str()
+                                    .parse::<u32>()
+                                    .unwrap()
+                            }
+                            Rule::int => {
+                                bank_org = parse_int(p.into_inner().next().unwrap()) as u16
+                            }
                             _ => (),
                         }
                     }
