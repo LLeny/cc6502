@@ -1326,13 +1326,22 @@ impl<'a> CompilerState<'a> {
                                 }
                                 if var_type == VariableType::Char {
                                     var_type = VariableType::CharPtr;
-                                    var_const = true;
+                                    #[cfg(not(feature = "atarilynx"))]
+                                    {
+                                        var_const = true;
+                                    }
                                 } else if var_type == VariableType::CharPtr {
                                     var_type = VariableType::CharPtrPtr;
-                                    var_const = true;
+                                    #[cfg(not(feature = "atarilynx"))]
+                                    {
+                                        var_const = true;
+                                    }
                                 } else if var_type == VariableType::Short {
                                     var_type = VariableType::ShortPtr;
-                                    var_const = true;
+                                    #[cfg(not(feature = "atarilynx"))]
+                                    {
+                                        var_const = true;
+                                    }
                                 } else {
                                     return Err(
                                         self.syntax_error("Kind of array not available", start)
