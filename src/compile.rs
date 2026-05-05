@@ -1272,6 +1272,17 @@ impl<'a> CompilerState<'a> {
                                     }
                                 }
                             }
+                            Rule::aligned => {
+                                let px = p.into_inner().next().unwrap();
+                                let a = self.parse_calc(px.into_inner())?;
+                                if a > 0 {
+                                    alignment = a as usize
+                                } else {
+                                    return Err(
+                                        self.syntax_error("Alignement must be positive", start)
+                                    );
+                                }
+                            }
                             _ => (),
                         }
                     }
