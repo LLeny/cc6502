@@ -21,6 +21,7 @@ regex = "1"
 itertools = "0.13.0"
 
 [features]
+default = []
 atari2600 = []
 atari7800 = []
 atarilynx = []
