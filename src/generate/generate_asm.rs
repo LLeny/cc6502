@@ -103,10 +103,14 @@ impl<'a> GeneratorState<'a> {
             ExprType::Label(l) => {
                 nb_bytes = match mnemonic {
                     JMP | JSR => 3,
+                    #[cfg(feature = "65C02")]
+                    BRA => 2,
                     _ => 2,
                 };
                 cycles = match mnemonic {
                     JMP => 3,
+                    #[cfg(feature = "65C02")]
+                    BRA => 3,
                     JSR => 6,
                     _ => {
                         cycles_alt = Some(3);
