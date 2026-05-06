@@ -32,6 +32,8 @@ pub enum AsmMnemonic {
     STA,
     STX,
     STY,
+    #[cfg(feature = "65C02")]
+    STZ,
     TAX,
     TAY,
     TXA,
